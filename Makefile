@@ -19,3 +19,11 @@ generate-user-api:
 	--go-grpc_out=pkg/user_api --go-grpc_opt=paths=source_relative \
 	--plugin=protoc-gen-go-grpc=bin/protoc-gen-go-grpc \
 	api/user_api/user_api.proto
+
+build:
+	GOOS=linux GOARCH=amd64 go build -o auth cmd/grpc_server/main.go
+
+docker-build-and-push:
+	docker buildx build --no-cache --platform linux/amd64 -t ${REGISTRY}/auth:v0.0.1 .
+	aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${REGISTRY}
+	docker push ${REGISTRY}
