@@ -40,7 +40,7 @@ func (s server) Update(ctx context.Context, req *user_api.UpdateRequest) (*empty
 func (s server) Get(ctx context.Context, req *user_api.GetRequest) (*user_api.GetResponse, error) {
 	return &user_api.GetResponse{
 		User: &user_api.User{
-			Id: gofakeit.Int64(),
+			Id: req.GetId(),
 			User: &user_api.UserInfo{
 				Name:            gofakeit.Name(),
 				Email:           gofakeit.Email(),
