@@ -43,7 +43,7 @@ func (s server) Get(ctx context.Context, req *user_api.GetRequest) (*user_api.Ge
 			Id: req.GetId(),
 			User: &user_api.UserInfo{
 				Name:            "TEST USER",
-				Email:           gofakeit.Email(),
+				Email:           "TEST EMAIL",
 				Password:        gofakeit.Password(true, true, true, true, true, 1),
 				PasswordConfirm: gofakeit.BeerName(),
 				Role:            user_api.Role_USER,
