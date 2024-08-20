@@ -22,7 +22,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
 
       - name: Login to Docker Registery
-        run: aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${{ secrets.REGISTRY }}
+        run: echo ${{ secrets.CREADS }} | docker login --username AWS --password-stdin ${{ secrets.REGISTRY }}
 
       - name: Build and Push Docker Image
         run: |
@@ -47,7 +47,7 @@ jobs:
             TAG_NAME=$(echo $GITHUB_SHA | head -c7)
             
             # Login into Selectel Registry
-            aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin ${{ secrets.REGISTRY }}
+            echo ${{ secrets.CREADS }} | docker login --username AWS --password-stdin ${{ secrets.REGISTRY }}
             
             # Stop running container
             docker stop $CONTAINER_NAME
