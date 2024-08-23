@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/Chuiko-GIT/chat/pkg/user_api"
+	"github.com/Chuiko-GIT/auth/pkg/user_api"
 )
 
 const (
