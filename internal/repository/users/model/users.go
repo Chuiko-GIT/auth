@@ -8,7 +8,7 @@ import (
 type (
 	UserInfoRepo struct {
 		Name            string `db:"name"`
-		Email           string `db:"name"`
+		Email           string `db:"email"`
 		Password        string `db:"password"`
 		PasswordConfirm string `db:"password_confirm"`
 		Role            string `db:"role"`
