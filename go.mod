@@ -6,7 +6,6 @@ toolchain go1.22.5
 
 require (
 	github.com/Masterminds/squirrel v1.5.4
-	github.com/brianvoe/gofakeit v3.18.0+incompatible
 	github.com/fatih/color v1.17.0
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/joho/godotenv v1.5.1
