@@ -5,7 +5,7 @@ import (
 	"github.com/Chuiko-GIT/auth/pkg/user_api"
 )
 
-// В курсе решили назвать название этого файла тоже service.go
+// В курсе решили назвать название этого файла тоже service_provider.go
 // В курсе так же не придумали название данному слою, поэтому Implementation
 
 type Implementation struct {
