@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	"github.com/jackc/pgx/v4/pgxpool"
-
 	"github.com/Chuiko-GIT/auth/internal/api/users"
 	uImpl "github.com/Chuiko-GIT/auth/internal/api/users"
+	db "github.com/Chuiko-GIT/auth/internal/client"
+	"github.com/Chuiko-GIT/auth/internal/client/db/pg"
 	"github.com/Chuiko-GIT/auth/internal/closer"
 	"github.com/Chuiko-GIT/auth/internal/config"
 	"github.com/Chuiko-GIT/auth/internal/config/env"
@@ -18,15 +18,12 @@ import (
 )
 
 type ServiceProvider struct {
-	pgConfig   config.PGConfig
-	grpcConfig config.GRPCConfig
-
-	pgPool          *pgxpool.Pool
+	pgConfig        config.PGConfig
+	grpcConfig      config.GRPCConfig
+	dbClient        db.Client
 	usersRepository repository.Users
-
-	usersService service.Users
-
-	usersImpl *users.Implementation
+	usersService    service.Users
+	usersImpl       *users.Implementation
 }
 
 func newServiceProvider() *ServiceProvider {
@@ -58,31 +55,27 @@ func (s *ServiceProvider) GRPCConfig() config.GRPCConfig {
 	return s.grpcConfig
 }
 
-func (s *ServiceProvider) PGPool(ctx context.Context) *pgxpool.Pool {
-	if s.pgPool == nil {
-		poll, err := pgxpool.Connect(ctx, s.PGConfig().DSN())
+func (s *ServiceProvider) DBClient(ctx context.Context) db.Client {
+	if s.dbClient == nil {
+		cl, err := pg.New(ctx, s.PGConfig().DSN())
 		if err != nil {
 			log.Fatalf("failed to create db client: %v", err)
 		}
 
-		if err = poll.Ping(ctx); err != nil {
+		if err = cl.DB().Ping(ctx); err != nil {
 			log.Fatalf("ping error: %s", err.Error())
 		}
+		closer.Add(cl.Close)
 
-		closer.Add(func() error {
-			poll.Close()
-			return nil
-		})
-
-		s.pgPool = poll
+		s.dbClient = cl
 	}
 
-	return s.pgPool
+	return s.dbClient
 }
 
 func (s *ServiceProvider) UsersRepository(ctx context.Context) repository.Users {
 	if s.usersRepository == nil {
-		s.usersRepository = uRepo.NewRepository(s.PGPool(ctx))
+		s.usersRepository = uRepo.NewRepository(s.DBClient(ctx))
 	}
 
 	return s.usersRepository

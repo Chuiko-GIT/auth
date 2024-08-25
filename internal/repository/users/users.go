@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	sq "github.com/Masterminds/squirrel"
-	"github.com/jackc/pgx/v4/pgxpool"
 
+	db "github.com/Chuiko-GIT/auth/internal/client"
 	"github.com/Chuiko-GIT/auth/internal/model"
 	"github.com/Chuiko-GIT/auth/internal/repository"
 	"github.com/Chuiko-GIT/auth/internal/repository/users/converter"
@@ -32,10 +31,10 @@ const (
 var _ repository.Users = &Repo{}
 
 type Repo struct {
-	db *pgxpool.Pool
+	db db.Client
 }
 
-func NewRepository(db *pgxpool.Pool) *Repo {
+func NewRepository(db db.Client) *Repo {
 	return &Repo{db: db}
 }
 
@@ -48,15 +47,18 @@ func (r Repo) Create(ctx context.Context, user model.UserInfo) (int64, error) {
 
 	query, args, err := builderInsert.ToSql()
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("failed to build query: %v", err))
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "users.repository.Create",
+		QueryRaw: query,
 	}
 
 	var userID int64
-	if err = r.db.QueryRow(ctx, query, args...).Scan(&userID); err != nil {
-		return 0, errors.New(fmt.Sprintf("failed to select users: %v", err))
+	if err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&userID); err != nil {
+		return 0, err
 	}
-
-	log.Printf("inserted user with id: %d", userID)
 
 	return userID, nil
 }
@@ -70,19 +72,18 @@ func (r Repo) Get(ctx context.Context, id int64) (model.User, error) {
 
 	query, args, err := builderSelectOne.ToSql()
 	if err != nil {
-		return model.User{}, errors.New(fmt.Sprintf("failed to build query: %v", err))
+		return model.User{}, err
+	}
+
+	q := db.Query{
+		Name:     "users.repository.Get",
+		QueryRaw: query,
 	}
 
 	var resp repoModel.UserRepo
-	err = r.db.
-		QueryRow(ctx, query, args...).
-		Scan(&resp.ID, &resp.UserInfo.Name, &resp.UserInfo.Email, &resp.UserInfo.Password, &resp.UserInfo.PasswordConfirm, &resp.UserInfo.Role, &resp.CreatedAt, &resp.UpdatedAt)
-	if err != nil {
-		return model.User{}, errors.New(fmt.Sprintf("failed to select user: %v", err))
+	if err = r.db.DB().ScanOneContext(ctx, &resp, q, args...); err != nil {
+		return model.User{}, err
 	}
-
-	log.Printf("id: %d, name: %s, email: %s,password: %s,passwordConfirm: %s,role: %s, created_at: %v, updated_at: %v\n",
-		&resp.ID, &resp.UserInfo.Name, &resp.UserInfo.Email, &resp.UserInfo.Password, &resp.UserInfo.PasswordConfirm, &resp.UserInfo.Role, &resp.CreatedAt, &resp.UpdatedAt)
 
 	return converter.ToUserFromRepo(resp), nil
 }
@@ -105,12 +106,14 @@ func (r Repo) Update(ctx context.Context, request model.UpdateUser) error {
 		return errors.New(fmt.Sprintf("failed to build query: %v", err))
 	}
 
-	res, err := r.db.Exec(ctx, query, args...)
-	if err != nil {
-		return errors.New(fmt.Sprintf("failed to update user: %v", err))
+	q := db.Query{
+		Name:     "users.repository.Update",
+		QueryRaw: query,
 	}
 
-	log.Printf("updated %d rows", res.RowsAffected())
+	if _, err = r.db.DB().ExecContext(ctx, q, args...); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -122,11 +125,16 @@ func (r Repo) Delete(ctx context.Context, id int64) error {
 
 	query, args, err := builder.ToSql()
 	if err != nil {
-		return errors.New("failed to build query")
+		return err
 	}
 
-	if _, err = r.db.Exec(ctx, query, args...); err != nil {
-		return errors.New("failed to delete user")
+	q := db.Query{
+		Name:     "users.repository.Delete",
+		QueryRaw: query,
+	}
+
+	if _, err = r.db.DB().ExecContext(ctx, q, args...); err != nil {
+		return err
 	}
 
 	return nil
